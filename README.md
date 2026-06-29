@@ -32,20 +32,20 @@ SPRING_PROFILES_ACTIVE=prod
 
 ## Deployment on Railway
 
-### Environment Variables Required
+### Environment Variables Required (auto-set by Railway)
 ```
 PORT=8080 (auto-set by Railway)
 SPRING_PROFILES_ACTIVE=prod
-DATABASE_URL=jdbc:postgresql://... (auto-set by Railway PostgreSQL)
-DATABASE_USERNAME=... (auto-set by Railway)
-DATABASE_PASSWORD=... (auto-set by Railway)
+JDBC_DATABASE_URL=jdbc:postgresql://... (auto-set by Railway PostgreSQL)
+PGUSER=... (auto-set by Railway)
+PGPASSWORD=... (auto-set by Railway)
 ```
 
 ### Railway Setup
 1. Create a PostgreSQL database on Railway
 2. Create a new Railway service from this repository
 3. Add environment variable: `SPRING_PROFILES_ACTIVE=prod`
-4. Railway will auto-inject DATABASE_URL, DATABASE_USERNAME, DATABASE_PASSWORD
+4. Railway will auto-inject JDBC_DATABASE_URL, PGUSER, PGPASSWORD
 
 ## API Documentation
 
