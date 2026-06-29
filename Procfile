@@ -1,1 +1,1 @@
-web: java -jar target/*.jar --server.port=${PORT} --spring.profiles.active=prod
+web: java -jar target/sport-ai-1.0-SNAPSHOT.jar --server.port=${PORT} --spring.profiles.active=prod
