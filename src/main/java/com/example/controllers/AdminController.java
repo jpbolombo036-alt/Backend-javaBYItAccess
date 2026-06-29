@@ -3,11 +3,14 @@ package com.example.controllers;
 import com.example.entities.*;
 import com.example.enums.PrescriptionStatus;
 import com.example.services.*;
+import com.example.dto.PrescriptionRequest;
+import com.example.dto.PrescriptionResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -43,7 +47,21 @@ public class AdminController {
     @ApiResponse(responseCode = "200", description = "Prescription créée avec succès")
     @ApiResponse(responseCode = "400", description = "Données invalides")
     public ResponseEntity<Prescription> createPrescription(
-            @Parameter(description = "Détails de la prescription à créer") @RequestBody Prescription prescription) {
+            @Parameter(description = "Détails de la prescription à créer") @Valid @RequestBody PrescriptionRequest request) {
+        Prescription prescription = new Prescription();
+        prescription.setDoctor(new Doctor());
+        prescription.getDoctor().setId(request.doctorId());
+        prescription.setPatient(new Patient());
+        prescription.getPatient().setId(request.patientId());
+        prescription.setTotalAmount(request.totalAmount());
+        prescription.setNotes(request.notes());
+        
+        String email = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur authentifié introuvable"));
+        prescription.setProcessedBy(currentUser);
+        
         Prescription created = prescriptionService.createPrescription(prescription);
         return ResponseEntity.ok(created);
     }
