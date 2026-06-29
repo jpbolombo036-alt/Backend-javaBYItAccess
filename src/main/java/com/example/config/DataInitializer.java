@@ -4,14 +4,18 @@ import com.example.entities.*;
 import com.example.enums.UserRole;
 import com.example.enums.PrescriptionStatus;
 import com.example.repositories.*;
+import com.example.services.PrescriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Component
+@Profile("dev")
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired
@@ -24,15 +28,22 @@ public class DataInitializer implements CommandLineRunner {
     private PatientRepository patientRepository;
 
     @Autowired
-    private PrescriptionRepository prescriptionRepository;
+    private PrescriptionService prescriptionService;
+
+    @Autowired
+    private VirtualWalletRepository virtualWalletRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
-        // Create sample users
-        User admin = new User("Admin User", "admin@med.com", "hashed_password", UserRole.ADMIN);
+        // Create sample admin user
+        User admin = new User("Admin User", "admin@med.com", passwordEncoder.encode("admin123"), UserRole.ADMIN);
         userRepository.save(admin);
 
-        User doctorUser = new User("Dr. John Smith", "doctor@med.com", "hashed_password", UserRole.DOCTOR);
+        // Create sample doctor user
+        User doctorUser = new User("Dr. John Smith", "doctor@med.com", passwordEncoder.encode("doctor123"), UserRole.DOCTOR);
         userRepository.save(doctorUser);
 
         // Create sample doctor
@@ -43,6 +54,10 @@ public class DataInitializer implements CommandLineRunner {
         doctor.setLicenseNo("MD123456");
         doctor.setPhone("555-0123");
         doctorRepository.save(doctor);
+
+        // Create virtual wallet for doctor
+        VirtualWallet wallet = new VirtualWallet(doctor);
+        virtualWalletRepository.save(wallet);
 
         // Create sample patients
         Patient patient1 = new Patient("Alice Johnson", LocalDate.of(1980, 5, 15), "555-0124");
@@ -59,7 +74,7 @@ public class DataInitializer implements CommandLineRunner {
         prescription1.setTotalAmount(new BigDecimal("1000.00"));
         prescription1.setNotes("Regular checkup and medication");
         prescription1.setStatus(PrescriptionStatus.VALIDATED);
-        prescriptionRepository.save(prescription1);
+        prescriptionService.createPrescription(prescription1);
 
         Prescription prescription2 = new Prescription();
         prescription2.setDoctor(doctor);
@@ -68,6 +83,6 @@ public class DataInitializer implements CommandLineRunner {
         prescription2.setTotalAmount(new BigDecimal("2500.00"));
         prescription2.setNotes("Specialized treatment");
         prescription2.setStatus(PrescriptionStatus.PENDING);
-        prescriptionRepository.save(prescription2);
+        prescriptionService.createPrescription(prescription2);
     }
 }

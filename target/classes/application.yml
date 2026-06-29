@@ -1,0 +1,44 @@
+# Default configuration (H2 for development)
+spring:
+  application:
+    name: medical-prescription-management
+  profiles:
+    active: dev
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+    default-property-inclusion: non_null
+
+jwt:
+  # Read the JWT secret from environment variable JWT_SECRET, fallback to the existing value for local/dev
+  secret: ${JWT_SECRET:Hs3pT8Zx4kF5LmN9QvR2sUdX7cYpV0wzGfAeHjKlMnBgTqRs}
+  expirationMs: 3600000
+
+# Swagger UI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# Server Configuration
+server:
+  port: ${PORT:8080}

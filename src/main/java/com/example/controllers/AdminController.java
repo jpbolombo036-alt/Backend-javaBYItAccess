@@ -3,6 +3,11 @@ package com.example.controllers;
 import com.example.entities.*;
 import com.example.enums.PrescriptionStatus;
 import com.example.services.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +19,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin")
 @CrossOrigin(origins = "*")
+@Tag(name = "Admin API", description = "API pour les administrateurs - gestion complète des prescriptions, commissions et paiements")
 public class AdminController {
 
     @Autowired
@@ -28,20 +34,33 @@ public class AdminController {
     @Autowired
     private VirtualWalletService virtualWalletService;
 
+    @Autowired
+    private com.example.repositories.UserRepository userRepository;
+
     // Prescription endpoints
     @PostMapping("/prescriptions")
-    public ResponseEntity<Prescription> createPrescription(@RequestBody Prescription prescription) {
+    @Operation(summary = "Créer une nouvelle prescription", description = "Crée une prescription et génère automatiquement une commission de 5%")
+    @ApiResponse(responseCode = "200", description = "Prescription créée avec succès")
+    @ApiResponse(responseCode = "400", description = "Données invalides")
+    public ResponseEntity<Prescription> createPrescription(
+            @Parameter(description = "Détails de la prescription à créer") @RequestBody Prescription prescription) {
         Prescription created = prescriptionService.createPrescription(prescription);
         return ResponseEntity.ok(created);
     }
 
     @GetMapping("/prescriptions")
+    @Operation(summary = "Lister toutes les prescriptions", description = "Récupère la liste de toutes les prescriptions")
+    @ApiResponse(responseCode = "200", description = "Liste des prescriptions récupérée avec succès")
     public ResponseEntity<List<Prescription>> getAllPrescriptions() {
         return ResponseEntity.ok(prescriptionService.getAllPrescriptions());
     }
 
     @GetMapping("/prescriptions/{id}")
-    public ResponseEntity<Prescription> getPrescription(@PathVariable UUID id) {
+    @Operation(summary = "Récupérer une prescription par ID", description = "Récupère les détails d'une prescription spécifique")
+    @ApiResponse(responseCode = "200", description = "Prescription trouvée")
+    @ApiResponse(responseCode = "404", description = "Prescription non trouvée")
+    public ResponseEntity<Prescription> getPrescription(
+            @Parameter(description = "ID de la prescription") @PathVariable UUID id) {
         return ResponseEntity.ok(prescriptionService.getPrescriptionById(id));
     }
 
@@ -70,13 +89,19 @@ public class AdminController {
 
     // Payment endpoints
     @PostMapping("/payments/doctor/{doctorId}/full")
+    @Operation(summary = "Payer toutes les commissions d'un médecin", description = "Traite le paiement complet pour toutes les commissions en attente d'un médecin")
+    @ApiResponse(responseCode = "200", description = "Paiement traité avec succès")
+    @ApiResponse(responseCode = "400", description = "Aucune commission en attente")
     public ResponseEntity<Payment> processFullPaymentForDoctor(
-            @PathVariable UUID doctorId,
-            @RequestBody Map<String, String> paymentDetails) {
-        
-        // Create a dummy user for now (in real app, get from authentication)
-        User paidBy = new User(); // This should come from security context
-        
+            @Parameter(description = "ID du médecin") @PathVariable UUID doctorId,
+            @Parameter(description = "Détails du paiement") @RequestBody Map<String, String> paymentDetails) {
+
+        String email = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+
+        User paidBy = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur authentifié introuvable"));
+
         Payment payment = paymentService.processFullPaymentForDoctor(
             doctorId,
             paymentDetails.get("method"),

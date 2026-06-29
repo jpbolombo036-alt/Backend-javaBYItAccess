@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,12 +31,27 @@ public class PaymentService {
 
     @Transactional
     public Payment processPayment(Payment payment, List<UUID> commissionIds) {
-        // Save the payment
-        Payment savedPayment = paymentRepository.save(payment);
-
-        // Get the doctor's virtual wallet
+        // Get the doctor's virtual wallet and validate balance
         VirtualWallet wallet = virtualWalletRepository.findByDoctorId(payment.getDoctor().getId())
                 .orElseThrow(() -> new RuntimeException("Virtual wallet not found for doctor"));
+
+        // Calculate total commission amount to validate balance
+        BigDecimal totalCommissionAmount = commissionIds.stream()
+                .map(id -> commissionRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("Commission not found: " + id)))
+                .map(Commission::getCommissionAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (payment.getAmount().compareTo(totalCommissionAmount) > 0) {
+            throw new RuntimeException("Payment amount exceeds total commission amount");
+        }
+
+        if (wallet.getBalance().compareTo(payment.getAmount()) < 0) {
+            throw new RuntimeException("Insufficient balance in virtual wallet");
+        }
+
+        // Save the payment
+        Payment savedPayment = paymentRepository.save(payment);
 
         // Process each commission
         for (UUID commissionId : commissionIds) {
@@ -64,15 +80,15 @@ public class PaymentService {
     public Payment processFullPaymentForDoctor(UUID doctorId, String method, String reference, String note, User paidBy) {
         // Get all pending commissions for the doctor
         List<Commission> pendingCommissions = commissionRepository.findPendingCommissionsByDoctor(doctorId);
-        
+
         if (pendingCommissions.isEmpty()) {
             throw new RuntimeException("No pending commissions found for doctor");
         }
 
-        // Calculate total amount
-        double totalAmount = pendingCommissions.stream()
-                .mapToDouble(c -> c.getCommissionAmount().doubleValue())
-                .sum();
+        // Calculate total amount using BigDecimal for precision
+        BigDecimal totalAmount = pendingCommissions.stream()
+                .map(Commission::getCommissionAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Get doctor entity
         Doctor doctor = pendingCommissions.get(0).getDoctor();
@@ -81,7 +97,7 @@ public class PaymentService {
         Payment payment = new Payment();
         payment.setDoctor(doctor);
         payment.setPaidBy(paidBy);
-        payment.setAmount(java.math.BigDecimal.valueOf(totalAmount));
+        payment.setAmount(totalAmount);
         payment.setMethod(method);
         payment.setReference(reference);
         payment.setNote(note);

@@ -1,5 +1,6 @@
 package com.example.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.example.enums.CommissionStatus;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -40,6 +41,7 @@ public class Commission {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "commission", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<PaymentCommission> paymentCommissions = new ArrayList<>();
 
     public Commission() {
@@ -65,15 +67,19 @@ public class Commission {
     public void setDoctor(Doctor doctor) { this.doctor = doctor; }
 
     public BigDecimal getBaseAmount() { return baseAmount; }
-    public void setBaseAmount(BigDecimal baseAmount) { 
+    public void setBaseAmount(BigDecimal baseAmount) {
         this.baseAmount = baseAmount;
-        this.commissionAmount = baseAmount.multiply(rate);
+        if (this.baseAmount != null && this.rate != null) {
+            this.commissionAmount = this.baseAmount.multiply(this.rate);
+        }
     }
 
     public BigDecimal getRate() { return rate; }
-    public void setRate(BigDecimal rate) { 
+    public void setRate(BigDecimal rate) {
         this.rate = rate;
-        this.commissionAmount = baseAmount.multiply(rate);
+        if (this.baseAmount != null && this.rate != null) {
+            this.commissionAmount = this.baseAmount.multiply(this.rate);
+        }
     }
 
     public BigDecimal getCommissionAmount() { return commissionAmount; }
