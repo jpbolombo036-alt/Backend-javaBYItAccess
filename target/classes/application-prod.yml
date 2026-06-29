@@ -3,10 +3,16 @@ spring:
   application:
     name: medical-prescription-management
   datasource:
-    url: ${JDBC_DATABASE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:medicaldb}}
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:medicaldb}}?sslmode=require
     driver-class-name: org.postgresql.Driver
     username: ${PGUSER:${POSTGRES_USER:postgres}}
     password: ${PGPASSWORD:${POSTGRES_PASSWORD:postgres}}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -34,6 +40,7 @@ logging:
   level:
     root: INFO
     org.springframework.web: INFO
+    org.postgresql: INFO
 
 # Swagger UI Configuration (disabled in production)
 springdoc:
