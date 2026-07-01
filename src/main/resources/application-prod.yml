@@ -3,10 +3,10 @@ spring:
   application:
     name: medical-prescription-management
   datasource:
-    url: ${JDBC_DATABASE_URL}?sslmode=require
+    url: ${JDBC_DATABASE_URL:${DATABASE_URL}}
     driver-class-name: org.postgresql.Driver
-    username: ${POSTGRES_USER:${PGUSER}}
-    password: ${POSTGRES_PASSWORD:${PGPASSWORD}}
+    username: ${POSTGRES_USER:${PGUSER:${DATABASE_USERNAME:${DB_USER}}}
+    password: ${POSTGRES_PASSWORD:${PGPASSWORD:${DATABASE_PASSWORD:${DB_PASSWORD}}}}
     hikari:
       maximum-pool-size: 5
       minimum-idle: 2
@@ -17,7 +17,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
@@ -28,9 +28,11 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    baseline-version: 0
     locations: classpath:db/migration
     connect-retries: 10
     validate-on-migrate: false
+    out-of-order: false
   h2:
     console:
       enabled: false
