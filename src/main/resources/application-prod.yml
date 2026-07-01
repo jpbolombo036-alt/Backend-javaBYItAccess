@@ -7,13 +7,14 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: ${POSTGRES_USER:${PGUSER:${DATABASE_USERNAME:${DB_USER}}}
     password: ${POSTGRES_PASSWORD:${PGPASSWORD:${DATABASE_PASSWORD:${DB_PASSWORD}}}}
-    hikari:
-      maximum-pool-size: 5
-      minimum-idle: 2
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
-      initialization-fail-timeout: 0
+hikari:
+       maximum-pool-size: 5
+       minimum-idle: 2
+       connection-timeout: 60000
+       idle-timeout: 600000
+       max-lifetime: 1800000
+       initialization-fail-timeout: 1
+       leak-detection-threshold: 60000
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
