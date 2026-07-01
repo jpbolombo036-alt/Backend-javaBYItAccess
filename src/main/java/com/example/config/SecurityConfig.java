@@ -62,6 +62,7 @@ public class SecurityConfig {
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/ws/**", "/ws").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/doctor/**").hasRole("DOCTOR")
                 .requestMatchers("/api/users/admin", "/api/users/doctor").hasRole("ADMIN")
@@ -69,6 +70,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/**").authenticated()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/health").permitAll()
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )

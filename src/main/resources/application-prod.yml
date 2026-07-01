@@ -3,10 +3,10 @@ spring:
   application:
     name: medical-prescription-management
   datasource:
-    url: ${JDBC_DATABASE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:medicaldb}}?sslmode=require
+    url: ${JDBC_DATABASE_URL}?sslmode=require
     driver-class-name: org.postgresql.Driver
-    username: ${PGUSER:${POSTGRES_USER:postgres}}
-    password: ${PGPASSWORD:${POSTGRES_PASSWORD:postgres}}
+    username: ${POSTGRES_USER:${PGUSER}}
+    password: ${POSTGRES_PASSWORD:${PGPASSWORD}}
     hikari:
       maximum-pool-size: 5
       minimum-idle: 2

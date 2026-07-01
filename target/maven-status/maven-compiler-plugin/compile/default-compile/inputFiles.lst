@@ -6,6 +6,7 @@ D:\Projet\Sport_AI\src\main\java\com\example\config\CustomUserDetailsService.jav
 D:\Projet\Sport_AI\src\main\java\com\example\dto\PrescriptionDTO.java
 D:\Projet\Sport_AI\src\main\java\com\example\entities\Commission.java
 D:\Projet\Sport_AI\src\main\java\com\example\Main.java
+D:\Projet\Sport_AI\src\main\java\com\example\config\websocket\JwtHandshakeHandler.java
 D:\Projet\Sport_AI\src\main\java\com\example\enums\PrescriptionStatus.java
 D:\Projet\Sport_AI\src\main\java\com\example\repositories\PaymentRepository.java
 D:\Projet\Sport_AI\src\main\java\com\example\controllers\UserController.java
@@ -13,6 +14,7 @@ D:\Projet\Sport_AI\src\main\java\com\example\dto\CommissionSummaryDTO.java
 D:\Projet\Sport_AI\src\main\java\com\example\entities\Patient.java
 D:\Projet\Sport_AI\src\main\java\com\example\entities\Prescription.java
 D:\Projet\Sport_AI\src\main\java\com\example\repositories\CommissionRepository.java
+D:\Projet\Sport_AI\src\main\java\com\example\controllers\WebSocketMessageController.java
 D:\Projet\Sport_AI\src\main\java\com\example\entities\PaymentCommission.java
 D:\Projet\Sport_AI\src\main\java\com\example\services\PrescriptionService.java
 D:\Projet\Sport_AI\src\main\java\com\example\entities\Doctor.java
@@ -21,6 +23,7 @@ D:\Projet\Sport_AI\src\main\java\com\example\entities\VirtualWallet.java
 D:\Projet\Sport_AI\src\main\java\com\example\repositories\PaymentCommissionRepository.java
 D:\Projet\Sport_AI\src\main\java\com\example\services\PaymentService.java
 D:\Projet\Sport_AI\src\main\java\com\example\entities\User.java
+D:\Projet\Sport_AI\src\main\java\com\example\config\WebSocketConfig.java
 D:\Projet\Sport_AI\src\main\java\com\example\controllers\AdminController.java
 D:\Projet\Sport_AI\src\main\java\com\example\controllers\DoctorController.java
 D:\Projet\Sport_AI\src\main\java\com\example\dto\PrescriptionResponse.java
@@ -29,6 +32,9 @@ D:\Projet\Sport_AI\src\main\java\com\example\enums\CommissionStatus.java
 D:\Projet\Sport_AI\src\main\java\com\example\config\JwtAuthenticationFilter.java
 D:\Projet\Sport_AI\src\main\java\com\example\config\GlobalExceptionHandler.java
 D:\Projet\Sport_AI\src\main\java\com\example\services\CommissionService.java
+D:\Projet\Sport_AI\src\main\java\com\example\config\websocket\WebSocketAuthChannelInterceptor.java
+D:\Projet\Sport_AI\src\main\java\com\example\config\websocket\WebSocketAuthInterceptor.java
+D:\Projet\Sport_AI\src\main\java\com\example\controllers\HealthController.java
 D:\Projet\Sport_AI\src\main\java\com\example\repositories\VirtualWalletRepository.java
 D:\Projet\Sport_AI\src\main\java\com\example\services\VirtualWalletService.java
 D:\Projet\Sport_AI\src\main\java\com\example\dto\PrescriptionRequest.java
@@ -37,4 +43,5 @@ D:\Projet\Sport_AI\src\main\java\com\example\config\PrivateNetworkCorsFilter.jav
 D:\Projet\Sport_AI\src\main\java\com\example\controllers\AuthController.java
 D:\Projet\Sport_AI\src\main\java\com\example\entities\Payment.java
 D:\Projet\Sport_AI\src\main\java\com\example\config\SecurityConfig.java
+D:\Projet\Sport_AI\src\main\java\com\example\config\WebSocketNotificationService.java
 D:\Projet\Sport_AI\src\main\java\com\example\repositories\DoctorRepository.java

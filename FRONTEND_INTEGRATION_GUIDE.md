@@ -101,62 +101,201 @@ const login = async (email: string, password: string) => {
 
 ---
 
-## API Integration Examples
+## WebSocket Integration (Primary Communication)
 
-### Axios Instance Setup
+This application uses **WebSocket with STOMP** as the primary communication layer, not classic REST. All data flows through real-time messaging for instant dashboard updates.
+
+### Connection Setup
+
 ```typescript
-import axios from 'axios';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
-const api = axios.create({
-  baseURL: 'http://localhost:8080',
-  headers: {
-    'Content-Type': 'application/json',
+const wsClient = new Client({
+  webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+  connectHeaders: {
+    Authorization: `Bearer ${localStorage.getItem('token')}`
   },
+  reconnectDelay: 5000,
+  heartbeatIncoming: 4000,
+  heartbeatOutgoing: 4000,
+  onConnect: () => {
+    console.log('WebSocket connected');
+  },
+  onStompError: (frame) => {
+    console.error('STOMP error', frame.headers['message']);
+  }
 });
 
-// Add auth token interceptor
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+wsClient.activate();
+```
+
+### Subscriptions (Real-time Data)
+
+```typescript
+// Admin subscriptions
+const adminSubscriptions = {
+  prescriptions: () => wsClient.subscribe('/topic/admin/prescriptions', msg => {
+    console.log('Prescription update:', JSON.parse(msg.body));
+  }),
+  
+  commissions: () => wsClient.subscribe('/topic/admin/commissions', msg => {
+    console.log('Commission update:', JSON.parse(msg.body));
+  }),
+  
+  payments: () => wsClient.subscribe('/topic/admin/payments', msg => {
+    console.log('Payment update:', JSON.parse(msg.body));
+  }),
+  
+  wallets: () => wsClient.subscribe('/topic/admin/wallets', msg => {
+    console.log('Wallet update:', JSON.parse(msg.body));
+  }),
+  
+  notifications: () => wsClient.subscribe('/topic/admin/notifications', msg => {
+    console.log('Admin notification:', JSON.parse(msg.body));
+  })
+};
+
+// Doctor subscriptions
+const doctorSubscriptions = (doctorId: string) => ({
+  prescriptions: () => wsClient.subscribe(`/topic/doctor/${doctorId}/prescriptions`, msg => {
+    console.log('My prescription update:', JSON.parse(msg.body));
+  }),
+  
+  commissions: () => wsClient.subscribe(`/topic/doctor/${doctorId}/commissions`, msg => {
+    console.log('My commission update:', JSON.parse(msg.body));
+  }),
+  
+  payments: () => wsClient.subscribe(`/topic/doctor/${doctorId}/payments`, msg => {
+    console.log('My payment update:', JSON.parse(msg.body));
+  }),
+  
+  wallet: () => wsClient.subscribe(`/topic/doctor/${doctorId}/wallet`, msg => {
+    console.log('My wallet update:', JSON.parse(msg.body));
+  }),
+  
+  notifications: () => wsClient.subscribe(`/topic/doctor/${doctorId}/notifications`, msg => {
+    console.log('Doctor notification:', JSON.parse(msg.body));
+  })
 });
 ```
 
-### Create Prescription
+### Sending Commands
+
 ```typescript
-const createPrescription = async (data: {
+// Create prescription
+const createPrescription = (data: {
   doctorId: string;
   patientId: string;
-  processedById: string;
   totalAmount: number;
   notes?: string;
 }) => {
-  const response = await api.post('/api/admin/prescriptions', {
-    doctor: { id: data.doctorId },
-    patient: { id: data.patientId },
-    processedBy: { id: data.processedById },
-    totalAmount: data.totalAmount,
-    notes: data.notes
+  wsClient.publish({
+    destination: '/app/prescription/create',
+    body: JSON.stringify(data)
   });
-  return response.data;
 };
-```
 
-### Process Payment
-```typescript
-const processPayment = async (doctorId: string, paymentDetails: {
+// Update prescription status
+const updatePrescriptionStatus = (id: string, status: 'PENDING' | 'VALIDATED' | 'CANCELLED') => {
+  wsClient.publish({
+    destination: '/app/prescription/updateStatus',
+    body: JSON.stringify({ id, status })
+  });
+};
+
+// Process payment
+const processPayment = (doctorId: string, details: {
   method: string;
   reference: string;
   note: string;
 }) => {
-  const response = await api.post(
-    `/api/admin/payments/doctor/${doctorId}/full`,
-    paymentDetails
-  );
-  return response.data;
+  wsClient.publish({
+    destination: '/app/payment/process',
+    body: JSON.stringify({ doctorId, ...details })
+  });
 };
+
+// Get prescriptions list
+const getPrescriptions = () => {
+  wsClient.publish({
+    destination: '/app/prescription/list'
+  });
+};
+
+// Get doctor wallet
+const getWallet = (doctorId: string) => {
+  wsClient.publish({
+    destination: '/app/wallet/get',
+    body: JSON.stringify({ doctorId })
+  });
+};
+
+// Get commissions
+const getCommissions = (doctorId?: string) => {
+  wsClient.publish({
+    destination: '/app/commission/list',
+    body: doctorId ? JSON.stringify({ doctorId }) : undefined
+  });
+};
+
+// Get payments
+const getPayments = (doctorId?: string) => {
+  wsClient.publish({
+    destination: '/app/payments/list',
+    body: doctorId ? JSON.stringify({ doctorId }) : undefined
+  });
+};
+```
+
+### React Hook Example
+
+```typescript
+import { useEffect, useState } from 'react';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+
+export const useWebSocket = (token: string) => {
+  const [client, setClient] = useState<Client | null>(null);
+
+  useEffect(() => {
+    const wsClient = new Client({
+      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      connectHeaders: { Authorization: `Bearer ${token}` },
+      reconnectDelay: 5000,
+      onConnect: () => {
+        setClient(wsClient);
+      }
+    });
+    wsClient.activate();
+    return () => wsClient.deactivate();
+  }, [token]);
+
+  return client;
+};
+```
+
+### Error Handling
+
+```typescript
+wsClient.onStompError = (frame) => {
+  console.error('STOMP error:', frame.headers['message']);
+  
+  if (frame.headers['message'].includes('authentication')) {
+    window.location.href = '/login';
+  }
+};
+
+wsClient.onWebSocketError = (event) => {
+  console.error('WebSocket error:', event);
+};
+```
+
+### Environment Configuration
+
+```env
+VITE_WS_URL=http://localhost:8080/ws
+VITE_API_BASE_URL=http://localhost:8080
 ```
 
 ---

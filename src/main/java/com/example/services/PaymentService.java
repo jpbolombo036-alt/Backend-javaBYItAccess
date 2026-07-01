@@ -1,5 +1,6 @@
 package com.example.services;
 
+import com.example.config.WebSocketNotificationService;
 import com.example.entities.*;
 import com.example.enums.CommissionStatus;
 import com.example.repositories.PaymentRepository;
@@ -29,13 +30,14 @@ public class PaymentService {
     @Autowired
     private VirtualWalletRepository virtualWalletRepository;
 
+    @Autowired
+    private WebSocketNotificationService notificationService;
+
     @Transactional
     public Payment processPayment(Payment payment, List<UUID> commissionIds) {
-        // Get the doctor's virtual wallet and validate balance
         VirtualWallet wallet = virtualWalletRepository.findByDoctorId(payment.getDoctor().getId())
                 .orElseThrow(() -> new RuntimeException("Virtual wallet not found for doctor"));
 
-        // Calculate total commission amount to validate balance
         BigDecimal totalCommissionAmount = commissionIds.stream()
                 .map(id -> commissionRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Commission not found: " + id)))
@@ -50,50 +52,43 @@ public class PaymentService {
             throw new RuntimeException("Insufficient balance in virtual wallet");
         }
 
-        // Save the payment
         Payment savedPayment = paymentRepository.save(payment);
 
-        // Process each commission
         for (UUID commissionId : commissionIds) {
             Commission commission = commissionRepository.findById(commissionId)
                     .orElseThrow(() -> new RuntimeException("Commission not found: " + commissionId));
 
-            // Create payment-commission relationship
             PaymentCommission paymentCommission = new PaymentCommission();
             paymentCommission.setPayment(savedPayment);
             paymentCommission.setCommission(commission);
             paymentCommissionRepository.save(paymentCommission);
 
-            // Update commission status to PAID
             commission.setStatus(CommissionStatus.PAID);
             commissionRepository.save(commission);
         }
 
-        // Process payment from wallet (deduct from balance)
         wallet.processPayment(savedPayment.getAmount());
         virtualWalletRepository.save(wallet);
+
+        notificationService.broadcastPaymentProcessed(savedPayment, savedPayment.getDoctor().getId());
 
         return savedPayment;
     }
 
     @Transactional
     public Payment processFullPaymentForDoctor(UUID doctorId, String method, String reference, String note, User paidBy) {
-        // Get all pending commissions for the doctor
         List<Commission> pendingCommissions = commissionRepository.findPendingCommissionsByDoctor(doctorId);
 
         if (pendingCommissions.isEmpty()) {
             throw new RuntimeException("No pending commissions found for doctor");
         }
 
-        // Calculate total amount using BigDecimal for precision
         BigDecimal totalAmount = pendingCommissions.stream()
                 .map(Commission::getCommissionAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Get doctor entity
         Doctor doctor = pendingCommissions.get(0).getDoctor();
 
-        // Create payment
         Payment payment = new Payment();
         payment.setDoctor(doctor);
         payment.setPaidBy(paidBy);
@@ -102,10 +97,11 @@ public class PaymentService {
         payment.setReference(reference);
         payment.setNote(note);
 
-        // Process payment
-        return processPayment(payment, pendingCommissions.stream()
+        Payment result = processPayment(payment, pendingCommissions.stream()
                 .map(Commission::getId)
                 .toList());
+
+        return result;
     }
 
     public List<Payment> getPaymentsByDoctor(UUID doctorId) {

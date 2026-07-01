@@ -8,7 +8,9 @@ Spring Boot backend API for managing medical prescriptions with automatic commis
 - Spring Boot 3.2.0
 - Spring Data JPA
 - Spring Security
+- WebSocket STOMP (real-time communication)
 - H2 Database (development) / PostgreSQL (production)
+- Flyway (database migrations)
 - OpenAPI/Swagger
 
 ## Running the Application
@@ -20,6 +22,7 @@ Spring Boot backend API for managing medical prescriptions with automatic commis
 mvn spring-boot:run
 ```
 Server runs at `http://localhost:8080`
+WebSocket endpoint: `ws://localhost:8080/ws`
 
 ### Production (PostgreSQL - Railway)
 Set environment variables:
@@ -74,6 +77,7 @@ src/main/java/com/example/
 ├── Main.java                    # Application entry point
 ├── config/
 │   ├── SecurityConfig.java      # Spring Security configuration
+│   ├── WebSocketConfig.java     # WebSocket/STOMP configuration
 │   └── DataInitializer.java     # Initial data setup (dev profile only)
 ├── controllers/
 │   ├── AdminController.java     # Admin-only endpoints

@@ -1,5 +1,6 @@
 package com.example.services;
 
+import com.example.config.WebSocketNotificationService;
 import com.example.entities.*;
 import com.example.enums.PrescriptionStatus;
 import com.example.repositories.PrescriptionRepository;
@@ -25,6 +26,9 @@ public class PrescriptionService {
     @Autowired
     private VirtualWalletRepository virtualWalletRepository;
 
+    @Autowired
+    private WebSocketNotificationService notificationService;
+
     @Transactional
     public Prescription createPrescription(Prescription prescription) {
         // Save the prescription first
@@ -49,7 +53,11 @@ public class PrescriptionService {
         wallet.addCommission(savedCommission.getCommissionAmount());
         virtualWalletRepository.save(wallet);
         
-        return prescriptionRepository.save(savedPrescription);
+        Prescription result = prescriptionRepository.save(savedPrescription);
+        
+        notificationService.broadcastPrescriptionCreated(result, result.getDoctor().getId());
+        
+        return result;
     }
 
     public List<Prescription> getAllPrescriptions() {
@@ -70,7 +78,11 @@ public class PrescriptionService {
                 .orElseThrow(() -> new RuntimeException("Prescription not found"));
         
         prescription.setStatus(status);
-        return prescriptionRepository.save(prescription);
+        Prescription result = prescriptionRepository.save(prescription);
+        
+        notificationService.broadcastPrescriptionUpdated(result, result.getDoctor().getId());
+        
+        return result;
     }
 
     public Prescription getPrescriptionById(UUID prescriptionId) {
